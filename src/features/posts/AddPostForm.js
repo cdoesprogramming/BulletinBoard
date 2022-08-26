@@ -1,8 +1,8 @@
 import { useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 // nanoid will help generate a random id 
-import { postAdded } from "./postsSlice"
-import { selectAllUsers } from "./users/usersSlice"
+import { addNewPost } from "./postsSlice"
+import { selectAllUsers } from "../users/usersSlice"
 
 const AddPostForm = () => {
     const dispatch = useDispatch()
@@ -10,6 +10,7 @@ const AddPostForm = () => {
     const [title, setTitle] = useState('')
     const [content, setContent] = useState('')
     const [userId, setUserId] = useState('')
+    const [addRequestStatus, setAddRequestStatus] = useState('idle')
 
     const users = useSelector(selectAllUsers)
 
@@ -18,19 +19,26 @@ const AddPostForm = () => {
     const onContentChanged = e => setContent(e.target.value)
     const onAuthorChanged = e => setUserId(e.target.value)
 
+     // canSave checks if the title, content and userid are all true
+    // If it is true we can enable the form button
+    const canSave = [title, content, userId].every(Boolean) && addRequestStatus === 'idle'; 
+
     const onSavePostClicked = () => {
-        if (title && content) {
-            dispatch(
-                postAdded(title, content, userId)
-            )
-            setTitle('')
-            setContent('')
+        if (canSave) {
+            try {
+                setAddRequestStatus('pending')
+                dispatch(addNewPost({ title, body: content, userId })).unwrap()
+                
+                setTitle('')
+                setContent('')
+                setUserId('')
+            } catch (err) {
+                console.error('Failed to save the post', err)
+            } finally {
+                setAddRequestStatus('idle')
+            }
         }
     }
-
-    // canSave checks if the title, content and userid are all true
-    // If it is true we can enable the form button
-    const canSave = Boolean(title) && Boolean(content) && Boolean(userId)
 
     // This creates the options menu
     // We map over the users variable then use the option element to have a key and a value and then display the user name
